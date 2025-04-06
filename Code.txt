@@ -1,0 +1,61 @@
+# بارگذاری پکیج‌ها
+library(ggplot2)
+library(igraph)
+library(reshape2)
+
+# بارگذاری داده‌ها (فرض بر اینه که فایل CSV مشابه در دسترسه)
+data <- read.csv("weather_data.csv")
+
+# نمایش خلاصه‌ای از داده‌ها
+summary(data[c("humidity", "wind_speed")])
+
+# آزمون نرمال بودن با Shapiro-Wilk
+shapiro.test(data$humidity)
+shapiro.test(data$wind_speed)
+
+# هیستوگرام‌ها
+hist(data$humidity, main="Histogram of Humidity", xlab="Humidity", col="skyblue")
+hist(data$wind_speed, main="Histogram of Wind Speed", xlab="Wind Speed", col="orange")
+
+# نمودار میله‌ای میانگین ماهانه (فرض بر اینه که ستون تاریخ هست)
+data$date <- as.Date(data$date)
+data$month <- format(data$date, "%m")
+monthly_avg <- aggregate(cbind(humidity, wind_speed) ~ month, data, mean)
+
+barplot(monthly_avg$humidity, names.arg=monthly_avg$month,
+        main="Average Humidity by Month", col="lightblue", ylab="Humidity")
+
+barplot(monthly_avg$wind_speed, names.arg=monthly_avg$month,
+        main="Average Wind Speed by Month", col="salmon", ylab="Wind Speed")
+
+# ضریب همبستگی
+correlation <- cor(data$humidity, data$wind_speed)
+print(paste("Correlation: ", correlation))
+
+# نمودار پراکندگی (scatter plot)
+ggplot(data, aes(x = wind_speed, y = humidity)) +
+  geom_point(color = "blue") +
+  geom_smooth(method = "lm", col = "red") +
+  labs(title = "Scatter Plot of Wind Speed vs Humidity")
+
+# نمودار جعبه‌ای
+boxplot(data$humidity, main="Boxplot of Humidity", ylab="Humidity", col="lightgreen")
+boxplot(data$wind_speed, main="Boxplot of Wind Speed", ylab="Wind Speed", col="lightcoral")
+
+# نمودار چگالی
+plot(density(data$humidity), main="Density Plot of Humidity", col="blue")
+plot(density(data$wind_speed), main="Density Plot of Wind Speed", col="red")
+
+# نمودار شبکه ساده (مثال دلخواه برای ۵ گره A-E)
+nodes <- c("A", "B", "C", "D", "E")
+edges <- data.frame(from=c("A", "A", "B", "C", "D"), to=c("B", "C", "D", "E", "E"))
+g <- graph_from_data_frame(edges, vertices=nodes, directed=FALSE)
+plot(g, vertex.color="lightblue", edge.width=2, main="Simple Network Graph")
+
+# شبکه وزن‌دار (مثال با وزن‌های فرضی)
+edges_weighted <- data.frame(from=c("A", "A", "B", "C", "D"),
+                              to=c("B", "C", "D", "E", "E"),
+                              weight=c(3.0, 1.0, 2.0, 2.5, 1.5))
+g_weighted <- graph_from_data_frame(edges_weighted, vertices=nodes, directed=FALSE)
+E(g_weighted)$width <- edges_weighted$weight
+plot(g_weighted, vertex.color="lightblue", edge.color="gray", main="Weighted Network Graph")
